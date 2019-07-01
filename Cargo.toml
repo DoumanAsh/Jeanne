@@ -1,0 +1,16 @@
+[package]
+name = "jeanne"
+version = "1.0.0"
+authors = ["Douman <douman@gmx.se>"]
+publish = false
+description = "My discord bot named after best girl in Naze Boku no Sekai wo Dare mo Oboeteinainoka"
+readme = "README.md"
+repository = "https://github.com/DoumanAsh/Jeanne"
+license = "Apache-2.0"
+include = [
+    "**/*.rs",
+    "Cargo.toml",
+    "README.md"
+]
+categories = ["web-programming::http-client"]
+edition = "2018"

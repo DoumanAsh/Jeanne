@@ -6,7 +6,7 @@ use std::env;
 use serde::Serialize;
 use serde::de::{DeserializeOwned};
 
-mod discord;
+pub mod discord;
 pub use discord::{DISCORD_TOKEN, Discord};
 
 pub const CMD_PREFIX: &str = "~";

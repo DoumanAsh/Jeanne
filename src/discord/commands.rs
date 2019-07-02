@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::collections::hash_map;
 
 use serenity::model::id::{UserId};
 use serenity::model::channel::Message;
@@ -8,16 +9,26 @@ use serenity::framework::standard::macros::{command, group, help};
 
 use crate::config;
 use crate::stats::{self, STATS};
-use crate::constants::ADMIN_CHECK_FAIL;
+use crate::constants::{ADMIN_CHECK_FAIL, MSG_SET_WELCOME, MSG_REMOVE_WELCOME};
 
 macro_rules! handle_msg_send {
     ($res:expr) => {
         match $res {
             Ok(_) => Ok(()),
+            Err(serenity::Error::Http(error)) => match *error {
+                serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
+                    STATS.increment(stats::DiscordMsgReject);
+                    Err(error.into())
+                },
+                _ => {
+                    STATS.increment(stats::DiscordMsgFail);
+                    Err(error.into())
+                },
+            },
             Err(error) => {
                 STATS.increment(stats::DiscordMsgReject);
                 Err(error.into())
-            }
+            },
         }
     }
 }
@@ -80,7 +91,7 @@ group!({
         description: "List of commands for administrator",
         checks: [is_admin]
     },
-    commands: [stats],
+    commands: [stats, welcome],
 });
 
 #[command]
@@ -95,6 +106,39 @@ fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
     STATS.reset();
 
     handle_msg_send!(res)
+}
+
+#[command]
+#[description = "Sets welcome channel for new users"]
+#[max_args(0)]
+fn welcome(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let guild_id = match msg.guild_id {
+        Some(guild_id) => guild_id,
+        None => return Ok(()),
+    };
+    let channel_id = msg.channel_id.0;
+
+    let rsp = config::DISCORD.with_write(move |config| match config.guilds.entry(guild_id.0) {
+        hash_map::Entry::Occupied(mut occupied) => match occupied.get().channels.welcome == channel_id {
+            true => {
+                occupied.remove();
+                MSG_REMOVE_WELCOME
+            },
+            false => {
+                occupied.get_mut().channels.welcome = channel_id;
+                MSG_SET_WELCOME
+            }
+        },
+        hash_map::Entry::Vacant(vacant) => {
+            let mut guild = config::discord::GuildInfo::default();
+            guild.channels.welcome = channel_id;
+
+            vacant.insert(guild);
+            MSG_SET_WELCOME
+        }
+    });
+
+    handle_msg_send!(msg.reply(ctx, rsp))
 }
 
 #[help]

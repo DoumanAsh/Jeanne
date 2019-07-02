@@ -16,16 +16,38 @@ impl serenity::client::EventHandler for Handler {
         STATS.increment(stats::DiscordReConnected);
     }
 
-    fn guild_member_addition(&self, _: serenity::prelude::Context, _: serenity::model::id::GuildId, user: serenity::model::guild::Member) {
-        let _user_id = {
+    fn guild_member_addition(&self, ctx: serenity::prelude::Context, guild: serenity::model::id::GuildId, user: serenity::model::guild::Member) {
+        use serenity::model::misc::Mentionable;
+
+        let mention = {
             let user = user.user.read();
 
             if user.bot {
                 return;
             }
 
-            user.id.0 as i64
+            user.id.mention()
         };
+
+        let guild_id = guild.0;
+
+        match config::DISCORD.with_read(|config| config.guilds.get(&guild_id).map(|guild| guild.channels.welcome)) {
+            Some(welcome_id) => match serenity::model::id::ChannelId(welcome_id).say(&ctx.http, format_args!("@here Everyone, please welcome {}", mention)) {
+                Ok(_) => (),
+                Err(serenity::Error::Http(error)) => match *error {
+                    serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
+                        STATS.increment(stats::DiscordMsgReject);
+                    },
+                    _ => {
+                        STATS.increment(stats::DiscordMsgFail);
+                    }
+                },
+                Err(_) => {
+                    STATS.increment(stats::DiscordMsgFail);
+                }
+            },
+            None => (),
+        }
 
         STATS.increment(stats::DiscordNewMember);
     }
@@ -37,7 +59,6 @@ impl serenity::client::EventHandler for Handler {
 
         STATS.increment(stats::DiscordLossMember);
     }
-
 }
 
 fn configure(config: &mut serenity::framework::standard::Configuration) -> &mut serenity::framework::standard::Configuration {

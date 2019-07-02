@@ -25,13 +25,20 @@ macro_rules! impl_counter {
                 }
             }
         )+
+
+            impl Stats {
+                pub fn reset(&self) {
+                    $(
+                        $name::get_ref(self).store(0, atomic::Ordering::Release);
+                     )+
+                }
+            }
     }
 }
 
 impl_counter!(
     DiscordConnected: discord.connected;
     DiscordReConnected: discord.re_connected;
-    DiscordBrokenPipe: discord.broken_pipe;
     DiscordBrokenConfigUpdate: discord.broken_config_update;
     DiscordNoAppInfo: discord.no_app_info;
     DiscordMsgReject: discord.msg_reject;
@@ -49,8 +56,6 @@ pub struct Discord {
     pub connected: Integer,
     ///Discord has been re-connected.
     pub re_connected: Integer,
-    ///Message pipe between Serenity and Actor is broken
-    pub broken_pipe: Integer,
     ///Unable to update configuration file.
     pub broken_config_update: Integer,
     ///Failed to retrieve application info.
@@ -73,18 +78,17 @@ pub struct Discord {
 
 impl fmt::Display for Discord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "connected:            **{}**\n", self.connected.load(atomic::Ordering::Relaxed))?;
-        write!(f, "re_connected:         **{}**\n", self.re_connected.load(atomic::Ordering::Relaxed))?;
-        write!(f, "broken_pipe:          **{}**\n", self.broken_pipe.load(atomic::Ordering::Relaxed))?;
-        write!(f, "broken_config_update: **{}**\n", self.broken_config_update.load(atomic::Ordering::Relaxed))?;
-        write!(f, "no_app_info:          **{}**\n", self.no_app_info.load(atomic::Ordering::Relaxed))?;
-        write!(f, "msg_reject:           **{}**\n", self.msg_reject.load(atomic::Ordering::Relaxed))?;
-        write!(f, "msg_fail:             **{}**\n", self.msg_fail.load(atomic::Ordering::Relaxed))?;
-        write!(f, "shutdown:             **{}**\n", self.shutdown.load(atomic::Ordering::Relaxed))?;
-        write!(f, "fialure:              **{}**\n", self.failure.load(atomic::Ordering::Relaxed))?;
-        write!(f, "cmd_count:            **{}**\n", self.cmd_count.load(atomic::Ordering::Relaxed))?;
-        write!(f, "new_member:           **{}**\n", self.new_member.load(atomic::Ordering::Relaxed))?;
-        write!(f, "loss_member:          **{}**\n", self.loss_member.load(atomic::Ordering::Relaxed))?;
+        write!(f, "connected:            **{}**\n", self.connected.load(atomic::Ordering::Acquire))?;
+        write!(f, "re_connected:         **{}**\n", self.re_connected.load(atomic::Ordering::Acquire))?;
+        write!(f, "broken_config_update: **{}**\n", self.broken_config_update.load(atomic::Ordering::Acquire))?;
+        write!(f, "no_app_info:          **{}**\n", self.no_app_info.load(atomic::Ordering::Acquire))?;
+        write!(f, "msg_reject:           **{}**\n", self.msg_reject.load(atomic::Ordering::Acquire))?;
+        write!(f, "msg_fail:             **{}**\n", self.msg_fail.load(atomic::Ordering::Acquire))?;
+        write!(f, "shutdown:             **{}**\n", self.shutdown.load(atomic::Ordering::Acquire))?;
+        write!(f, "failure:              **{}**\n", self.failure.load(atomic::Ordering::Acquire))?;
+        write!(f, "cmd_count:            **{}**\n", self.cmd_count.load(atomic::Ordering::Acquire))?;
+        write!(f, "new_member:           **{}**\n", self.new_member.load(atomic::Ordering::Acquire))?;
+        write!(f, "loss_member:          **{}**\n", self.loss_member.load(atomic::Ordering::Acquire))?;
 
         Ok(())
     }
@@ -100,7 +104,6 @@ impl Stats {
             discord: Discord {
                 connected: default_integer(),
                 re_connected: default_integer(),
-                broken_pipe: default_integer(),
                 broken_config_update: default_integer(),
                 no_app_info: default_integer(),
                 msg_reject: default_integer(),

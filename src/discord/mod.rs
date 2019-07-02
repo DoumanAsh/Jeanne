@@ -58,11 +58,31 @@ pub fn run() {
                                                      .group(&ADMIN_GROUP)
     );
 
+
+    if config::DISCORD.with_read(|config| config.owner) == 0 {
+        match client.cache_and_http.http.get_current_application_info() {
+            Ok(info) => {
+                log::info!("Discord setting new owner id={}", info.owner.id.0);
+                config::DISCORD.with_write(|config| config.owner = info.owner.id.0);
+            },
+            Err(error) => {
+                log::error!("Discord unable to get application information: {}", error);
+                STATS.increment(stats::DiscordNoAppInfo);
+            }
+        };
+    }
+
     loop {
         log::info!("Discord: start");
         match client.start() {
-            Ok(_) => break,
-            Err(error) => log::warn!("Discord stopped with error: {}", error),
+            Ok(_) => {
+                STATS.increment(stats::DiscordShutdown);
+                break;
+            }
+            Err(error) => {
+                STATS.increment(stats::DiscordFailure);
+                log::warn!("Discord stopped with error: {}", error);
+            }
         }
     }
 }

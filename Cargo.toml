@@ -16,8 +16,16 @@ categories = ["web-programming::http-client"]
 edition = "2018"
 
 [dependencies]
+lazy_static = "1"
 cute-log = "1"
 cute-dnd-dice = "2"
+parking_lot = "0.8"
+bincode = "1"
+async-timer = "0.2"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
 
 [dependencies.serenity]
 version = "0.6"
@@ -25,4 +33,9 @@ version = "0.6"
 [dependencies.log]
 version = "0"
 default-features = false
-features = ["max_level_warn", "release_max_level_info"]
+features = ["max_level_info", "release_max_level_warn"]
+
+[profile.release]
+lto = true
+opt-level = "z"
+codegen-units = 1

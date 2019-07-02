@@ -6,6 +6,7 @@ use serenity::prelude::{Context};
 use serenity::framework::standard::{Args, CommandResult, CommandOptions, CheckResult, Check, HelpOptions, CommandGroup, help_commands, DispatchError, Reason};
 use serenity::framework::standard::macros::{command, group, help};
 
+use crate::config;
 use crate::stats::{self, STATS};
 use crate::constants::ADMIN_CHECK_FAIL;
 
@@ -29,6 +30,11 @@ static IS_ADMIN_CHECK: Check = Check {
 };
 
 fn is_admin(ctx: &mut Context, message: &Message, _args: &mut Args, _options: &CommandOptions) -> CheckResult {
+    let owner_id = config::DISCORD.with_read(|config| config.owner);
+    if owner_id == message.author.id.0 {
+        return CheckResult::Success;
+    }
+
     if let Some(member) = message.member(&ctx.cache) {
         if let Ok(permissions) = member.permissions(&ctx.cache) {
             return permissions.administrator().into();
@@ -85,6 +91,8 @@ fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
             msg.embed(|embed| embed.title("Stats").color(serenity::utils::Colour::DARK_RED)
                                    .field("Discord", &STATS.discord, true))
     });
+
+    STATS.reset();
 
     handle_msg_send!(res)
 }

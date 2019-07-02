@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::collections::hash_map;
 
 use serenity::model::id::{UserId};
 use serenity::model::channel::Message;
@@ -112,30 +111,17 @@ fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
 #[description = "Sets welcome channel for new users"]
 #[max_args(0)]
 fn welcome(ctx: &mut Context, msg: &Message) -> CommandResult {
-    let guild_id = match msg.guild_id {
-        Some(guild_id) => guild_id,
-        None => return Ok(()),
-    };
     let channel_id = msg.channel_id.0;
 
-    let rsp = config::DISCORD.with_write(move |config| match config.guilds.entry(guild_id.0) {
-        hash_map::Entry::Occupied(mut occupied) => match occupied.get().channels.welcome == channel_id {
-            true => {
-                occupied.remove();
-                MSG_REMOVE_WELCOME
-            },
-            false => {
-                occupied.get_mut().channels.welcome = channel_id;
-                MSG_SET_WELCOME
-            }
+    let rsp = config::DISCORD.with_write(move |config| match config.channels.welcome == channel_id {
+        true => {
+            config.channels.welcome = 0;
+            MSG_REMOVE_WELCOME
         },
-        hash_map::Entry::Vacant(vacant) => {
-            let mut guild = config::discord::GuildInfo::default();
-            guild.channels.welcome = channel_id;
-
-            vacant.insert(guild);
+        false => {
+            config.channels.welcome = channel_id;
             MSG_SET_WELCOME
-        }
+        },
     });
 
     handle_msg_send!(msg.reply(ctx, rsp))

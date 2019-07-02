@@ -2,7 +2,6 @@ use serde::{Serialize, Deserialize};
 use async_timer::oneshot::{Oneshot, Timer};
 
 use std::io;
-use std::collections::HashMap;
 use core::ptr;
 use core::pin::Pin;
 use core::future::Future;
@@ -19,13 +18,8 @@ pub struct Channels {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct GuildInfo {
-    pub channels: Channels,
-}
-
-#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct DiscordConfig {
-    pub guilds: HashMap<u64, GuildInfo>,
+    pub channels: Channels,
     pub owner: u64,
 }
 

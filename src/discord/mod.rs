@@ -16,23 +16,24 @@ impl serenity::client::EventHandler for Handler {
         STATS.increment(stats::DiscordReConnected);
     }
 
-    fn guild_member_addition(&self, ctx: serenity::prelude::Context, guild: serenity::model::id::GuildId, user: serenity::model::guild::Member) {
+    fn guild_member_addition(&self, ctx: serenity::prelude::Context, _: serenity::model::id::GuildId, user: serenity::model::guild::Member) {
         use serenity::model::misc::Mentionable;
 
-        let mention = {
-            let user = user.user.read();
+        let welcome_channel = config::DISCORD.with_read(|config| config.channels.welcome);
+        if welcome_channel > 0 {
+            let welcome_channel = serenity::model::id::ChannelId(welcome_channel);
 
-            if user.bot {
-                return;
-            }
+            let mention = {
+                let user = user.user.read();
 
-            user.id.mention()
-        };
+                if user.bot {
+                    return;
+                }
 
-        let guild_id = guild.0;
+                user.id.mention()
+            };
 
-        match config::DISCORD.with_read(|config| config.guilds.get(&guild_id).map(|guild| guild.channels.welcome)) {
-            Some(welcome_id) => match serenity::model::id::ChannelId(welcome_id).say(&ctx.http, format_args!("@here Everyone, please welcome {}", mention)) {
+            match welcome_channel.say(&ctx.http, format_args!("@here Everyone, please welcome {}", mention)) {
                 Ok(_) => (),
                 Err(serenity::Error::Http(error)) => match *error {
                     serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
@@ -45,8 +46,7 @@ impl serenity::client::EventHandler for Handler {
                 Err(_) => {
                     STATS.increment(stats::DiscordMsgFail);
                 }
-            },
-            None => (),
+            }
         }
 
         STATS.increment(stats::DiscordNewMember);

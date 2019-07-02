@@ -14,3 +14,15 @@ include = [
 ]
 categories = ["web-programming::http-client"]
 edition = "2018"
+
+[dependencies]
+cute-log = "1"
+cute-dnd-dice = "2"
+
+[dependencies.serenity]
+version = "0.6"
+
+[dependencies.log]
+version = "0"
+default-features = false
+features = ["max_level_warn", "release_max_level_info"]

@@ -1,0 +1,46 @@
+language: rust
+
+services:
+  - docker
+
+env:
+  global:
+    - PROJECT_NAME=jeanne
+
+matrix:
+  include:
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-unknown-linux-musl
+    - os: linux
+      rust: nightly
+      env: TARGET=armv7-unknown-linux-gnueabihf
+      addons:
+        apt:
+          packages: *armhf
+
+sudo: false
+
+install:
+  - cargo install cross || true
+
+script:
+  - cross check --target $TARGET
+
+before_deploy:
+  - cross build --release --target $TARGET
+  - zip "$PROJECT_NAME-$TRAVIS_TAG-$TARGET.zip" -j target/$TARGET/release/$PROJECT_NAME
+
+deploy:
+  provider: releases
+  api_key: $GIT_TOKEN
+  file_glob: true
+  file: ${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}*
+  # don't delete the artifacts from previous phases
+  skip_cleanup: true
+  overwrite: true
+  # deploy when a new tag is pushed
+  on:
+    # channel to use to produce the release artifacts
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true

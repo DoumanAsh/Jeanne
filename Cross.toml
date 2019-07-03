@@ -1,0 +1,4 @@
+[build.env]
+passthrough = [
+    "JEANNE_DISCORD_TOKEN",
+]

@@ -1,9 +1,16 @@
 use crate::config;
 use crate::stats::{self, STATS};
+use crate::twitter;
+
+use std::sync::Arc;
 
 mod commands;
 
 use commands::*;
+
+lazy_static::lazy_static! {
+    pub static ref HTTP: parking_lot::RwLock<Option<Arc<serenity::CacheAndHttp>>> = parking_lot::RwLock::new(None);
+}
 
 struct Handler;
 
@@ -79,7 +86,6 @@ pub fn run() {
                                                      .group(&ADMIN_GROUP)
     );
 
-
     if config::DISCORD.with_read(|config| config.owner) == 0 {
         match client.cache_and_http.http.get_current_application_info() {
             Ok(info) => {
@@ -91,6 +97,12 @@ pub fn run() {
                 STATS.increment(stats::DiscordNoAppInfo);
             }
         };
+    }
+
+    HTTP.write().replace(client.cache_and_http.clone());
+
+    while let Some((tweet_id, tweet_type)) = twitter::BUFFERED_TWEETS.dequeue() {
+        twitter::redirect_tweet(&client.cache_and_http.http, tweet_id, tweet_type);
     }
 
     loop {
@@ -105,5 +117,7 @@ pub fn run() {
                 log::warn!("Discord stopped with error: {}", error);
             }
         }
+
+        HTTP.write().take();
     }
 }

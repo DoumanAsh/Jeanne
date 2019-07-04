@@ -8,7 +8,7 @@ use serenity::framework::standard::macros::{command, group, help};
 
 use crate::config;
 use crate::stats::{self, STATS};
-use crate::constants::{ADMIN_CHECK_FAIL, MSG_SET_WELCOME, MSG_REMOVE_WELCOME};
+use crate::constants::{ADMIN_CHECK_FAIL, MSG_SET_WELCOME, MSG_REMOVE_WELCOME, MSG_REMOVE_SUB, MSG_ADD_SUB, MSG_UNKNOWN_SUB};
 
 macro_rules! handle_msg_send {
     ($res:expr) => {
@@ -59,7 +59,7 @@ group!({
     options: {
         description: "List of commands available for everyone"
     },
-    commands: [ping, dice],
+    commands: [ping, dice, subscribe],
 });
 
 #[command]
@@ -82,6 +82,48 @@ fn dice(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
     };
 
     handle_msg_send!(res)
+}
+
+#[command]
+#[description = "Performs subscribe/unsubscribe for notifications\n\
+\n\
+To unsubscribe, subscribe again.\n\
+\n\
+Available subscribtions:\n\
+\n\
+- Naze - Subscribes to notifications about Naze Boku no Sekai Rare mo Oboitenaika?\n\
+- Bisokuzenshin - Subscribes to Azur Lane Slow Ahead 4koma TLs\n\
+"]
+#[num_args(1)]
+fn subscribe(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+    let arg = match args.trimmed().quoted().current() {
+        Some(arg) => arg,
+        None => unreach!()
+    };
+
+    let ch_id = msg.channel_id.0;
+
+    let text = if arg.eq_ignore_ascii_case("Naze") {
+        config::DISCORD.with_write(|config| match config.channels.naze.take(&ch_id).is_some() {
+            true => MSG_REMOVE_SUB,
+            false => {
+                config.channels.naze.insert(ch_id);
+                MSG_ADD_SUB
+            }
+        })
+    } else if arg.eq_ignore_ascii_case("Bisokuzenshin") {
+        config::DISCORD.with_write(|config| match config.channels.bisokuzenshin.take(&ch_id).is_some() {
+            true => MSG_REMOVE_SUB,
+            false => {
+                config.channels.bisokuzenshin.insert(ch_id);
+                MSG_ADD_SUB
+            }
+        })
+    } else {
+        MSG_UNKNOWN_SUB
+    };
+
+    handle_msg_send!(msg.reply(ctx, text))
 }
 
 group!({

@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use async_timer::oneshot::{Oneshot, Timer};
 
 use std::io;
+use std::collections::HashSet;
 use core::ptr;
 use core::pin::Pin;
 use core::future::Future;
@@ -15,6 +16,8 @@ pub const DISCORD_TOKEN: &str = env!("JEANNE_DISCORD_TOKEN");
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Channels {
     pub welcome: u64,
+    pub naze: HashSet<u64>,
+    pub bisokuzenshin: HashSet<u64>,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]

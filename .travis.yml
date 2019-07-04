@@ -36,11 +36,10 @@ deploy:
   api_key: $GIT_TOKEN
   file_glob: true
   file: ${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}*
-  # don't delete the artifacts from previous phases
   skip_cleanup: true
   overwrite: true
-  # deploy when a new tag is pushed
   on:
     # channel to use to produce the release artifacts
-    condition: $TRAVIS_RUST_VERSION = stable
+    # TODO: Switch back to stable
+    condition: $TRAVIS_RUST_VERSION = nightly
     tags: true

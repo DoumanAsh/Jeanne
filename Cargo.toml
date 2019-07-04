@@ -35,6 +35,15 @@ version = "0"
 default-features = false
 features = ["max_level_info", "release_max_level_warn"]
 
+[dependencies.tokio-global]
+version = "0.2"
+features = ["single"]
+
+[dependencies.egg-mode]
+git = "https://github.com/QuietMisdreavus/twitter-rs"
+default-features = false
+features = ["hyper-rustls"]
+
 [profile.release]
 lto = true
 opt-level = "z"

@@ -90,7 +90,7 @@ pub fn worker() {
             stream = rem_stream;
 
             match msg {
-                egg_mode::stream::StreamMessage::Tweet(tweet) => if !tweet.retweeted.unwrap_or(false) {
+                egg_mode::stream::StreamMessage::Tweet(tweet) => if !tweet.retweeted_status.is_some() {
                     for hash_tag in tweet.entities.hashtags {
                         if hash_tag.text.contains("びそくぜんしんっ") {
                             place_tweet(tweet.id, TweetType::Bisokuzenshin);

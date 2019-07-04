@@ -118,4 +118,6 @@ pub fn run() {
             }
         }
     }
+
+    HTTP.write().take();
 }

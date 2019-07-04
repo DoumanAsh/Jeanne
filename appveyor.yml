@@ -3,9 +3,7 @@ environment:
     PROJECT_NAME: jeanne
   matrix:
     - TARGET: x86_64-pc-windows-msvc
-      CHANNEL: nightly
-    - TARGET: i686-pc-windows-msvc
-      CHANNEL: nightly
+      CHANNEL: stable
 
 # Install Rust and Cargo
 # (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
@@ -39,7 +37,7 @@ deploy:
   on:
     # channel to use to produce the release artifacts
     # TODO: Switch back to stable
-    CHANNEL: nightly
+    CHANNEL: stable
     appveyor_repo_tag: true
 
 branches:

@@ -10,11 +10,11 @@ env:
 matrix:
   include:
     - os: linux
-      rust: nightly
+      rust: stable
       env: TARGET=x86_64-unknown-linux-musl
       # TODO: doesn't work?
       #- os: linux
-      #  rust: nightly
+      #  rust: stable
       #  env: TARGET=armv7-unknown-linux-gnueabihf
       #  addons:
       #    apt:
@@ -41,6 +41,5 @@ deploy:
   overwrite: true
   on:
     # channel to use to produce the release artifacts
-    # TODO: Switch back to stable
-    condition: $TRAVIS_RUST_VERSION = nightly
+    condition: $TRAVIS_RUST_VERSION = stable
     tags: true

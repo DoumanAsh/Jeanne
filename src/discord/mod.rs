@@ -113,7 +113,6 @@ pub fn run() {
                 break;
             }
             Err(error) => {
-                HTTP.write().take();
                 STATS.increment(stats::DiscordFailure);
                 log::warn!("Discord stopped with error: {}", error);
             }

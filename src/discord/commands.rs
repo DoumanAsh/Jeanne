@@ -141,7 +141,8 @@ group!({
 fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
     let res = msg.channel_id.send_message(&ctx.http, |msg| {
             msg.embed(|embed| embed.title("Stats").color(serenity::utils::Colour::DARK_RED)
-                                   .field("Discord", &STATS.discord, true))
+                                   .field("Discord", &STATS.discord, true)
+                                   .field("Twitter", &STATS.twitter, true))
     });
 
     STATS.reset();

@@ -31,6 +31,7 @@ pub enum TweetType {
 }
 
 fn send_tweet(http: &serenity::http::raw::Http, id: u64, ch_id: u64) {
+    STATS.increment(stats::TwitterRetweet);
     match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/aksysgames/status/{}", id)) {
         Ok(_) => (),
         Err(serenity::Error::Http(error)) => match *error {
@@ -83,6 +84,7 @@ pub fn worker() {
 
     loop {
         log::info!("Twitter stream starting...");
+        STATS.increment(stats::TwitterStartStream);
 
         let mut stream = create_twitter_stream();
 
@@ -90,7 +92,7 @@ pub fn worker() {
             stream = rem_stream;
 
             match msg {
-                egg_mode::stream::StreamMessage::Tweet(tweet) => if !tweet.retweeted_status.is_some() {
+                egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
                     for hash_tag in tweet.entities.hashtags {
                         if hash_tag.text.contains("びそくぜんしんっ") {
                             place_tweet(tweet.id, TweetType::Bisokuzenshin);

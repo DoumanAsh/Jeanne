@@ -48,6 +48,7 @@ impl_counter!(
     DiscordLossMember: discord.loss_member;
     TwitterStartStream: twitter.start_stream;
     TwitterRetweet: twitter.retweet;
+    TwitterUnfilteredTweet: twitter.unfiltered_tweet;
 );
 
 #[derive(Debug)]
@@ -56,6 +57,8 @@ pub struct Twitter {
     pub start_stream: Integer,
     ///Number of times redirected tweet.
     pub retweet: Integer,
+    ///Number of times when incoming tweet was discarded due unmatching hash tags
+    pub unfiltered_tweet: Integer,
 }
 
 #[derive(Debug)]
@@ -86,8 +89,9 @@ pub struct Discord {
 
 impl fmt::Display for Twitter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "start_stream: **{}**\n", self.start_stream.load(atomic::Ordering::Acquire))?;
-        write!(f, "retweet:      **{}**\n", self.retweet.load(atomic::Ordering::Acquire))?;
+        write!(f, "start_stream:     **{}**\n", self.start_stream.load(atomic::Ordering::Acquire))?;
+        write!(f, "retweet:          **{}**\n", self.retweet.load(atomic::Ordering::Acquire))?;
+        write!(f, "unfiltered_tweet: **{}**\n", self.unfiltered_tweet.load(atomic::Ordering::Acquire))?;
 
         Ok(())
     }
@@ -135,6 +139,7 @@ impl Stats {
             twitter: Twitter {
                 start_stream: default_integer(),
                 retweet: default_integer(),
+                unfiltered_tweet: default_integer(),
             }
         }
     }

@@ -12,7 +12,7 @@ pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
 //Stores cached tweet data,
 //we most likely do not need such big capacity
 //but just in case.
-pub static BUFFERED_TWEETS: Q64<(u64, TweetType)> = Q64::new();
+pub static BUFFERED_TWEETS: Q64<(u64, String, TweetType)> = Q64::new();
 
 fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     let token = egg_mode::Token::Access {
@@ -30,9 +30,9 @@ pub enum TweetType {
     Bisokuzenshin,
 }
 
-fn send_tweet(http: &serenity::http::raw::Http, id: u64, ch_id: u64) {
+fn send_tweet(http: &serenity::http::raw::Http, id: u64, name: &str, ch_id: u64) {
     STATS.increment(stats::TwitterRetweet);
-    match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/aksysgames/status/{}", id)) {
+    match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/{}/status/{}", id, name)) {
         Ok(_) => (),
         Err(serenity::Error::Http(error)) => match *error {
             serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
@@ -50,32 +50,32 @@ fn send_tweet(http: &serenity::http::raw::Http, id: u64, ch_id: u64) {
     }
 }
 
-pub fn redirect_tweet(http: &serenity::http::raw::Http, id: u64, typ: TweetType) {
+pub fn redirect_tweet(http: &serenity::http::raw::Http, id: u64, name: String, typ: TweetType) {
     match typ {
         TweetType::NazeBoku => {
-            config::DISCORD.with_read(|config| for ch in config.channels.naze.iter() {
-                send_tweet(&*http, id, *ch);
+            config::DISCORD.with_read(move |config| for ch in config.channels.naze.iter() {
+                send_tweet(&*http, id, &name, *ch);
             })
         },
         TweetType::Bisokuzenshin => {
-            config::DISCORD.with_read(|config| for ch in config.channels.bisokuzenshin.iter() {
-                send_tweet(&*http, id, *ch);
+            config::DISCORD.with_read(move |config| for ch in config.channels.bisokuzenshin.iter() {
+                send_tweet(&*http, id, &name, *ch);
             })
         },
     }
 }
 
-fn place_tweet(id: u64, typ: TweetType) {
+fn place_tweet(id: u64, name: String, typ: TweetType) {
     let http = match discord::HTTP.read().as_ref() {
         Some(cache) => cache.http.clone(),
         None => {
             //Cache it for when discord re-connects
-            let _ = BUFFERED_TWEETS.enqueue((id, typ));
+            let _ = BUFFERED_TWEETS.enqueue((id, name, typ));
             return;
         },
     };
 
-    redirect_tweet(&*http, id, typ);
+    redirect_tweet(&*http, id, name, typ);
 }
 
 pub fn worker() {
@@ -93,11 +93,20 @@ pub fn worker() {
 
             match msg {
                 egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
+                    let name = match tweet.user {
+                        Some(user) => user.screen_name,
+                        None => continue,
+                    };
+
+                    log::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
+
                     for hash_tag in tweet.entities.hashtags {
                         if hash_tag.text.contains("びそくぜんしんっ") {
-                            place_tweet(tweet.id, TweetType::Bisokuzenshin);
+                            place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
+                            break;
                         } else if hash_tag.text.contains("なぜ僕") {
-                            place_tweet(tweet.id, TweetType::NazeBoku);
+                            place_tweet(tweet.id, name, TweetType::NazeBoku);
+                            break;
                         }
                     }
                 },

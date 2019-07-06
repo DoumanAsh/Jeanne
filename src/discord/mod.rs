@@ -101,8 +101,8 @@ pub fn run() {
 
     HTTP.write().replace(client.cache_and_http.clone());
 
-    while let Some((tweet_id, tweet_type)) = twitter::BUFFERED_TWEETS.dequeue() {
-        twitter::redirect_tweet(&client.cache_and_http.http, tweet_id, tweet_type);
+    while let Some((tweet_id, user_name, tweet_type)) = twitter::BUFFERED_TWEETS.dequeue() {
+        twitter::redirect_tweet(&client.cache_and_http.http, tweet_id, user_name, tweet_type);
     }
 
     loop {

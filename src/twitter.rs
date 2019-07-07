@@ -32,7 +32,7 @@ pub enum TweetType {
 
 fn send_tweet(http: &serenity::http::raw::Http, id: u64, name: &str, ch_id: u64) {
     STATS.increment(stats::TwitterRetweet);
-    match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/{}/status/{}", id, name)) {
+    match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/{}/status/{}", name, id)) {
         Ok(_) => (),
         Err(serenity::Error::Http(error)) => match *error {
             serenity::prelude::HttpError::UnsuccessfulRequest(_) => {

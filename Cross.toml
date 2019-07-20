@@ -5,6 +5,7 @@ passthrough = [
     "JEANNE_TWITTER_CONSUMER_SECRET",
     "JEANNE_ACCESS_CONSUMER_KEY",
     "JEANNE_ACCESS_CONSUMER_SECRET",
+    "RUSTFLAGS",
 ]
 
 [target.armv7-unknown-linux-musleabihf]

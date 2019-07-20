@@ -25,7 +25,7 @@ script:
   - cross check --target $TARGET
 
 before_deploy:
-  - cross build --release --target $TARGET
+  - env RUSTFLAGS='-C link-arg=-s' cross build --release --target $TARGET
   - zip "$PROJECT_NAME-$TRAVIS_TAG-$TARGET.zip" -j target/$TARGET/release/$PROJECT_NAME
 
 deploy:

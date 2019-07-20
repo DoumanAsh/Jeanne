@@ -6,3 +6,6 @@ passthrough = [
     "JEANNE_ACCESS_CONSUMER_KEY",
     "JEANNE_ACCESS_CONSUMER_SECRET",
 ]
+
+[target.armv7-unknown-linux-musleabihf]
+image = "douman/cross-armv7-unknown-linux-musleabihf:latest"

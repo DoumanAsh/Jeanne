@@ -12,13 +12,9 @@ matrix:
     - os: linux
       rust: stable
       env: TARGET=x86_64-unknown-linux-musl
-      # TODO: doesn't work?
-      #- os: linux
-      #  rust: stable
-      #  env: TARGET=armv7-unknown-linux-gnueabihf
-      #  addons:
-      #    apt:
-      #      packages: *armhf
+    - os: linux
+      rust: stable
+      env: TARGET=armv7-unknown-linux-musleabihf
 
 sudo: false
 

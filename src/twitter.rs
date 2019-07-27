@@ -100,14 +100,14 @@ pub fn worker() {
 
                     log::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
 
-                    for hash_tag in tweet.entities.hashtags {
-                        if hash_tag.text.contains("びそくぜんしんっ") {
-                            place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
-                            break;
-                        } else if hash_tag.text.contains("なぜ僕") {
-                            place_tweet(tweet.id, name, TweetType::NazeBoku);
-                            break;
-                        }
+                    //Doesn't contain hashtags for long tweets
+                    //tweet.entities.hashtags
+                    if tweet.text.contains("びそくぜんしんっ") {
+                        place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
+                        break;
+                    } else if tweet.text.contains("なぜ僕") {
+                        place_tweet(tweet.id, name, TweetType::NazeBoku);
+                        break;
                     }
                 },
                 _ => (),

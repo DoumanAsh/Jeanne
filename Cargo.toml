@@ -21,7 +21,7 @@ cute-log = "1"
 cute-dnd-dice = "2"
 parking_lot = "0.9"
 bincode = "1"
-async-timer = "0.2"
+async-timer = "0.5"
 
 [dependencies.serde]
 version = "1"

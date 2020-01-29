@@ -70,7 +70,7 @@ impl Discord {
             Poll::Ready(_) => ()
         }
 
-        inner.1.restart(&CONFIG_UPDATE_INTERVAL, &waker);
+        inner.1.restart(CONFIG_UPDATE_INTERVAL, &waker);
         res
     }
 }

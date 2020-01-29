@@ -1,6 +1,6 @@
 [package]
 name = "jeanne"
-version = "1.0.5"
+version = "1.1.0"
 authors = ["Douman <douman@gmx.se>"]
 publish = false
 description = "My discord bot named after best girl in Naze Boku no Sekai wo Dare mo Oboeteinainoka"
@@ -19,25 +19,35 @@ edition = "2018"
 lazy_static = "1"
 cute-log = "1"
 cute-dnd-dice = "2"
-parking_lot = "0.9"
+parking_lot = "0.10"
 bincode = "1"
-async-timer = "0.5"
+async-timer = "0.7"
 
 [dependencies.serde]
 version = "1"
 features = ["derive"]
 
 [dependencies.serenity]
-version = "0.6"
+version = "0.8"
 
 [dependencies.log]
 version = "0"
 default-features = false
 features = ["max_level_info", "release_max_level_warn"]
 
-[dependencies.tokio-global]
+[dependencies.tokio]
 version = "0.2"
-features = ["single"]
+default-features = false
+features = ["macros", "rt-core"]
+
+[dependencies.futures-util]
+version = "0.3"
+default-features = false
+
+#It is retarded and uses native cert store, which is broken
+[dependencies.hyper-rustls]
+version = "0.19"
+default-features = false
 
 [dependencies.egg-mode]
 git = "https://github.com/QuietMisdreavus/twitter-rs"

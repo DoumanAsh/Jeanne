@@ -54,13 +54,10 @@ fn is_admin(ctx: &mut Context, message: &Message, _args: &mut Args, _options: &C
     CheckResult::Failure(Reason::Unknown)
 }
 
-group!({
-    name: "general",
-    options: {
-        description: "List of commands available for everyone"
-    },
-    commands: [ping, dice, subscribe],
-});
+#[group("general")]
+#[commands(ping, dice, subscribe)]
+#[description = "List of commands available for everyone"]
+pub struct General;
 
 #[command]
 #[description = "Ping bot and get pong in response, if bot is alvie"]
@@ -126,14 +123,11 @@ fn subscribe(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult 
     handle_msg_send!(msg.reply(ctx, text))
 }
 
-group!({
-    name: "admin",
-    options: {
-        description: "List of commands for administrator",
-        checks: [is_admin]
-    },
-    commands: [stats, welcome],
-});
+#[group("admin")]
+#[commands(stats, welcome)]
+#[checks(is_admin)]
+#[description = "List of commands available for administrators"]
+pub struct Admin;
 
 #[command]
 #[description = "List bot's counters"]

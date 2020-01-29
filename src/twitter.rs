@@ -1,5 +1,3 @@
-use tokio_global::AutoRuntime;
-
 use crate::{config, discord};
 use crate::stats::{self, STATS};
 use crate::utils::mpmc::Q64;
@@ -30,7 +28,7 @@ pub enum TweetType {
     Bisokuzenshin,
 }
 
-fn send_tweet(http: &serenity::http::raw::Http, id: u64, name: &str, ch_id: u64) {
+fn send_tweet(http: &serenity::http::client::Http, id: u64, name: &str, ch_id: u64) {
     STATS.increment(stats::TwitterRetweet);
     match serenity::model::id::ChannelId(ch_id).say(http, format_args!("https://twitter.com/{}/status/{}", name, id)) {
         Ok(_) => (),
@@ -50,7 +48,7 @@ fn send_tweet(http: &serenity::http::raw::Http, id: u64, name: &str, ch_id: u64)
     }
 }
 
-pub fn redirect_tweet(http: &serenity::http::raw::Http, id: u64, name: String, typ: TweetType) {
+pub fn redirect_tweet(http: &serenity::http::client::Http, id: u64, name: String, typ: TweetType) {
     match typ {
         TweetType::NazeBoku => {
             config::DISCORD.with_read(move |config| for ch in config.channels.naze.iter() {
@@ -78,9 +76,9 @@ fn place_tweet(id: u64, name: String, typ: TweetType) {
     redirect_tweet(&*http, id, name, typ);
 }
 
-pub fn worker() {
-    use tokio_global::futures::Stream;
-    let _tokio = tokio_global::single::init();
+#[tokio::main]
+pub async fn worker() {
+    use futures_util::stream::StreamExt;
 
     loop {
         log::info!("Twitter stream starting...");
@@ -88,9 +86,7 @@ pub fn worker() {
 
         let mut stream = create_twitter_stream();
 
-        while let Ok((Some(msg), rem_stream)) = stream.into_future().finish() {
-            stream = rem_stream;
-
+        while let Some(Ok(msg)) = stream.next().await {
             match msg {
                 egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
                     let name = match tweet.user {

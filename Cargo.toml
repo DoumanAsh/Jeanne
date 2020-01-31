@@ -44,11 +44,6 @@ features = ["macros", "rt-core"]
 version = "0.3"
 default-features = false
 
-#It is retarded and uses native cert store, which is broken
-[dependencies.hyper-rustls]
-version = "0.19"
-default-features = false
-
 [dependencies.egg-mode]
 git = "https://github.com/QuietMisdreavus/twitter-rs"
 default-features = false

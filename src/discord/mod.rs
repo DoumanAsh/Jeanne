@@ -89,11 +89,11 @@ pub fn run() {
     if config::DISCORD.with_read(|config| config.owner) == 0 {
         match client.cache_and_http.http.get_current_application_info() {
             Ok(info) => {
-                log::info!("Discord setting new owner id={}", info.owner.id.0);
+                rogu::info!("Discord setting new owner id={}", info.owner.id.0);
                 config::DISCORD.with_write(|config| config.owner = info.owner.id.0);
             },
             Err(error) => {
-                log::error!("Discord unable to get application information: {}", error);
+                rogu::error!("Discord unable to get application information: {}", error);
                 STATS.increment(stats::DiscordNoAppInfo);
             }
         };
@@ -106,7 +106,7 @@ pub fn run() {
     }
 
     loop {
-        log::info!("Discord: start");
+        rogu::info!("Discord: start");
         match client.start() {
             Ok(_) => {
                 STATS.increment(stats::DiscordShutdown);
@@ -114,7 +114,7 @@ pub fn run() {
             }
             Err(error) => {
                 STATS.increment(stats::DiscordFailure);
-                log::warn!("Discord stopped with error: {}", error);
+                rogu::warn!("Discord stopped with error: {}", error);
             }
         }
     }

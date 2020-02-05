@@ -15,14 +15,14 @@ lazy_static::lazy_static! {
     pub static ref DISCORD: Discord = match Discord::new() {
         Ok(discord) => discord,
         Err(error) => {
-            log::error!("Unable to load discord config: {}", error);
+            rogu::error!("Unable to load discord config: {}", error);
             unreachable!()
         }
     };
 }
 
 pub fn init() {
-    let _ = cute_log::init();
+    rogu::set_level(rogu::Level::TRACE);
 
     lazy_static::initialize(&DISCORD);
 }

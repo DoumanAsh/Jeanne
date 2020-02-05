@@ -17,7 +17,6 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "1"
-cute-log = "1"
 cute-dnd-dice = "2"
 parking_lot = "0.10"
 bincode = "1"
@@ -30,10 +29,14 @@ features = ["derive"]
 [dependencies.serenity]
 version = "0.8"
 
+[dependencies.rogu]
+version = "0.2"
+features = ["std", "release_level_trace_off", "release_level_debug_off"]
+
 [dependencies.log]
 version = "0"
 default-features = false
-features = ["max_level_info", "release_max_level_warn"]
+features = ["max_level_info", "release_max_level_off"]
 
 [dependencies.tokio]
 version = "0.2"

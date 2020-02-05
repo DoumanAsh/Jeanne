@@ -37,12 +37,12 @@ fn send_tweet(http: &serenity::http::client::Http, id: u64, name: &str, ch_id: u
                 STATS.increment(stats::DiscordMsgReject);
             },
             error => {
-                log::warn!("Twitter redirect failed with error: {}", error);
+                rogu::warn!("Twitter redirect failed with error: {}", error);
                 STATS.increment(stats::DiscordMsgFail);
             },
         },
         Err(error) => {
-            log::warn!("Twitter redirect failed with error: {}", error);
+            rogu::warn!("Twitter redirect failed with error: {}", error);
             STATS.increment(stats::DiscordMsgReject);
         },
     }
@@ -81,7 +81,7 @@ pub async fn worker() {
     use futures_util::stream::StreamExt;
 
     loop {
-        log::info!("Twitter stream starting...");
+        rogu::info!("Twitter stream starting...");
         STATS.increment(stats::TwitterStartStream);
 
         let mut stream = create_twitter_stream();
@@ -94,7 +94,7 @@ pub async fn worker() {
                         None => continue,
                     };
 
-                    log::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
+                    rogu::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
 
                     //Doesn't contain hashtags for long tweets
                     //tweet.entities.hashtags

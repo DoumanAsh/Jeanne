@@ -90,10 +90,10 @@ mod vtab {
     pub unsafe fn on_wake(_data: *const ()) {
         match crate::config::DISCORD.save() {
             Ok(_) => {
-                log::info!("Discord config is updated.");
+                rogu::info!("Discord config is updated.");
             },
             Err(error) => {
-                log::error!("Discord unable to save config: {}", error);
+                rogu::error!("Discord unable to save config: {}", error);
                 crate::stats::STATS.increment(crate::stats::DiscordBrokenConfigUpdate);
             }
         }

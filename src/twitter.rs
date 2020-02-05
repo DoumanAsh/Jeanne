@@ -19,7 +19,7 @@ fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     };
 
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
-                              .track(&["#びそくぜんしんっ", "#なぜ僕の世界を誰も覚えていないのか"])
+                              .track(&["#びそくぜんしんっ", "#なぜ僕"])
                               .start(&token)
 }
 

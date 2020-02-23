@@ -86,7 +86,7 @@ pub async fn worker() {
 
         let mut stream = create_twitter_stream();
 
-        while let Some(Ok(msg)) = stream.next().await {
+        'msg: while let Some(Ok(msg)) = stream.next().await {
             match msg {
                 egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
                     let name = match tweet.user {
@@ -96,16 +96,29 @@ pub async fn worker() {
 
                     rogu::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
 
-                    //Doesn't contain hashtags for long tweets
-                    //tweet.entities.hashtags
+                    for hash_tag in tweet.entities.hashtags {
+                        if hash_tag.text == "びそくぜんしんっ" {
+                            place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
+                            continue 'msg;
+                        } else if hash_tag.text == "なぜ僕" {
+                            place_tweet(tweet.id, name, TweetType::NazeBoku);
+                            continue 'msg;
+                        }
+                    }
+
+                    //tweet.entities.hashtags doesn't contain hashtags for long tweets
                     if tweet.text.contains("びそくぜんしんっ") {
                         place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
-                        break;
+                        continue;
                     } else if tweet.text.contains("なぜ僕") {
                         place_tweet(tweet.id, name, TweetType::NazeBoku);
-                        break;
+                        continue;
                     }
                 },
+                egg_mode::stream::StreamMessage::Disconnect(code, error) => {
+                    rogu::warn!("Twitter disconnected. Code={}, Error={}", code, error);
+                    break;
+                }
                 _ => (),
             }
         }

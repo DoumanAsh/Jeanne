@@ -2,10 +2,22 @@ use crate::{config, discord};
 use crate::stats::{self, STATS};
 use crate::utils::mpmc::Q64;
 
+use std::borrow::Cow;
+
 pub const TWITTER_CONSUMER_KEY: &str = env!("JEANNE_TWITTER_CONSUMER_KEY");
 pub const TWITTER_CONSUMER_SECRET: &str = env!("JEANNE_TWITTER_CONSUMER_SECRET");
 pub const TWITTER_ACCESS_KEY: &str = env!("JEANNE_ACCESS_CONSUMER_KEY");
 pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
+const TOKEN: egg_mode::Token = egg_mode::Token::Access {
+    consumer: egg_mode::KeyPair {
+        key: Cow::Borrowed(TWITTER_CONSUMER_KEY),
+        secret: Cow::Borrowed(TWITTER_CONSUMER_SECRET),
+    },
+    access: egg_mode::KeyPair {
+        key: Cow::Borrowed(TWITTER_ACCESS_KEY),
+        secret: Cow::Borrowed(TWITTER_ACCESS_SECRET),
+    }
+};
 
 //Stores cached tweet data,
 //we most likely do not need such big capacity
@@ -13,14 +25,9 @@ pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
 pub static BUFFERED_TWEETS: Q64<(u64, String, TweetType)> = Q64::new();
 
 fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
-    let token = egg_mode::Token::Access {
-        consumer: egg_mode::KeyPair::new(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET),
-        access: egg_mode::KeyPair::new(TWITTER_ACCESS_KEY, TWITTER_ACCESS_SECRET),
-    };
-
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
                               .track(&["#びそくぜんしんっ", "#なぜ僕", "#なぜ僕の世界を誰も覚えていないのか"])
-                              .start(&token)
+                              .start(&TOKEN)
 }
 
 pub enum TweetType {
@@ -76,6 +83,15 @@ fn place_tweet(id: u64, name: String, typ: TweetType) {
     redirect_tweet(&*http, id, name, typ);
 }
 
+async fn retweet(id: u64) {
+    match egg_mode::tweet::retweet(id, &TOKEN).await {
+        Ok(_) => (),
+        Err(error) => {
+            rogu::warn!("Unable to retweet id={}. Error: {}", id, error);
+        }
+    }
+}
+
 #[tokio::main]
 pub async fn worker() {
     use futures_util::stream::StreamExt;
@@ -102,6 +118,7 @@ pub async fn worker() {
                             continue 'msg;
                         } else if hash_tag.text.starts_with("なぜ僕") {
                             place_tweet(tweet.id, name, TweetType::NazeBoku);
+                            tokio::spawn(retweet(tweet.id));
                             continue 'msg;
                         }
                     }
@@ -112,6 +129,7 @@ pub async fn worker() {
                         continue;
                     } else if tweet.text.contains("なぜ僕") {
                         place_tweet(tweet.id, name, TweetType::NazeBoku);
+                        tokio::spawn(retweet(tweet.id));
                         continue;
                     }
                 },

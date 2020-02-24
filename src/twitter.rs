@@ -1,4 +1,4 @@
-use crate::{config, discord};
+use crate::{config, discord, constants};
 use crate::stats::{self, STATS};
 use crate::utils::mpmc::Q64;
 
@@ -8,6 +8,7 @@ pub const TWITTER_CONSUMER_KEY: &str = env!("JEANNE_TWITTER_CONSUMER_KEY");
 pub const TWITTER_CONSUMER_SECRET: &str = env!("JEANNE_TWITTER_CONSUMER_SECRET");
 pub const TWITTER_ACCESS_KEY: &str = env!("JEANNE_ACCESS_CONSUMER_KEY");
 pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
+
 const TOKEN: egg_mode::Token = egg_mode::Token::Access {
     consumer: egg_mode::KeyPair {
         key: Cow::Borrowed(TWITTER_CONSUMER_KEY),
@@ -92,9 +93,32 @@ async fn retweet(id: u64) {
     }
 }
 
+fn get_jeanne_phrase() -> &'static str {
+    use rand::distributions::{Distribution, Uniform};
+
+    let distribution = Uniform::from(0..constants::JEANNE_TALK.len());
+    let mut rng = rand::thread_rng();
+    constants::JEANNE_TALK[distribution.sample(&mut rng)]
+}
+
+async fn talk() {
+    let mut interval = async_timer::Interval::platform_new(core::time::Duration::from_secs(86400));
+    loop {
+        interval.as_mut().await;
+        match egg_mode::tweet::DraftTweet::new(get_jeanne_phrase()).send(&TOKEN).await {
+            Ok(_) => (),
+            Err(error) => {
+                rogu::warn!("Unable to send phrase. Error: {}", error);
+            }
+        }
+    }
+}
+
 #[tokio::main]
 pub async fn worker() {
     use futures_util::stream::StreamExt;
+
+    tokio::spawn(talk());
 
     loop {
         rogu::info!("Twitter stream starting...");

@@ -1,6 +1,6 @@
 [package]
 name = "jeanne"
-version = "1.1.4"
+version = "1.1.5"
 authors = ["Douman <douman@gmx.se>"]
 publish = false
 description = "My discord bot named after best girl in Naze Boku no Sekai wo Dare mo Oboeteinainoka"
@@ -21,6 +21,7 @@ cute-dnd-dice = "2"
 parking_lot = "0.10"
 bincode = "1"
 async-timer = "0.7"
+rand = "0.7"
 
 [dependencies.serde]
 version = "1"

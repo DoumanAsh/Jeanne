@@ -19,7 +19,7 @@ fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     };
 
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
-                              .track(&["#びそくぜんしんっ", "#なぜ僕"])
+                              .track(&["#びそくぜんしんっ", "#なぜ僕", "#なぜ僕の世界を誰も覚えていないのか"])
                               .start(&token)
 }
 
@@ -100,7 +100,7 @@ pub async fn worker() {
                         if hash_tag.text == "びそくぜんしんっ" {
                             place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
                             continue 'msg;
-                        } else if hash_tag.text == "なぜ僕" {
+                        } else if hash_tag.text.starts_with("なぜ僕") {
                             place_tweet(tweet.id, name, TweetType::NazeBoku);
                             continue 'msg;
                         }

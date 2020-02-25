@@ -49,6 +49,7 @@ impl_counter!(
     TwitterStartStream: twitter.start_stream;
     TwitterRetweet: twitter.retweet;
     TwitterUnfilteredTweet: twitter.unfiltered_tweet;
+    TwitterPeriodicTweet: twitter.periodic_tweet;
 );
 
 #[derive(Debug)]
@@ -59,6 +60,8 @@ pub struct Twitter {
     pub retweet: Integer,
     ///Number of times when incoming tweet was discarded due unmatching hash tags
     pub unfiltered_tweet: Integer,
+    ///Number of times when you  post tweet.
+    pub periodic_tweet: Integer,
 }
 
 #[derive(Debug)]
@@ -92,6 +95,7 @@ impl fmt::Display for Twitter {
         write!(f, "start_stream:     **{}**\n", self.start_stream.load(atomic::Ordering::Acquire))?;
         write!(f, "retweet:          **{}**\n", self.retweet.load(atomic::Ordering::Acquire))?;
         write!(f, "unfiltered_tweet: **{}**\n", self.unfiltered_tweet.load(atomic::Ordering::Acquire))?;
+        write!(f, "periodic_tweet:   **{}**\n", self.periodic_tweet.load(atomic::Ordering::Acquire))?;
 
         Ok(())
     }
@@ -140,6 +144,7 @@ impl Stats {
                 start_stream: default_integer(),
                 retweet: default_integer(),
                 unfiltered_tweet: default_integer(),
+                periodic_tweet: default_integer(),
             }
         }
     }

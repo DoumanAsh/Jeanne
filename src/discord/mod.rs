@@ -1,4 +1,4 @@
-use crate::config;
+use crate::{config, constants};
 use crate::stats::{self, STATS};
 use crate::twitter;
 
@@ -12,11 +12,41 @@ lazy_static::lazy_static! {
     pub static ref HTTP: parking_lot::RwLock<Option<Arc<serenity::CacheAndHttp>>> = parking_lot::RwLock::new(None);
 }
 
+fn stat_serenity_error(error: &serenity::Error) {
+    use core::ops::Deref;
+
+    match error {
+        serenity::Error::Http(ref error) => match error.deref() {
+            serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
+                STATS.increment(stats::DiscordMsgReject);
+            },
+            _ => {
+                STATS.increment(stats::DiscordMsgFail);
+            }
+        },
+        _ => {
+            STATS.increment(stats::DiscordMsgFail);
+        }
+    }
+}
+
 struct Handler;
 
 impl serenity::client::EventHandler for Handler {
-    fn ready(&self, _ctx: serenity::prelude::Context, _bot_data: serenity::model::gateway::Ready) {
+    fn ready(&self, ctx: serenity::prelude::Context, _bot_data: serenity::model::gateway::Ready) {
         STATS.increment(stats::DiscordConnected);
+        let welcome_channel = config::DISCORD.with_read(|config| config.channels.welcome);
+
+        if welcome_channel > 0 {
+            let welcome_channel = serenity::model::id::ChannelId(welcome_channel);
+            match welcome_channel.say(&ctx.http, constants::JEANNE_GREETING) {
+                Ok(_) => (),
+                Err(error) => {
+                    rogu::error!("Unable to greet on discord. Error: {}", error);
+                    stat_serenity_error(&error);
+                }
+            }
+        }
     }
 
     fn resume(&self, _ctx: serenity::prelude::Context, _: serenity::model::event::ResumedEvent) {
@@ -42,17 +72,7 @@ impl serenity::client::EventHandler for Handler {
 
             match welcome_channel.say(&ctx.http, format_args!("@here Everyone, please welcome {}", mention)) {
                 Ok(_) => (),
-                Err(serenity::Error::Http(error)) => match *error {
-                    serenity::prelude::HttpError::UnsuccessfulRequest(_) => {
-                        STATS.increment(stats::DiscordMsgReject);
-                    },
-                    _ => {
-                        STATS.increment(stats::DiscordMsgFail);
-                    }
-                },
-                Err(_) => {
-                    STATS.increment(stats::DiscordMsgFail);
-                }
+                Err(error) => stat_serenity_error(&error),
             }
         }
 

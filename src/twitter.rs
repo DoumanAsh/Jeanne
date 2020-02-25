@@ -93,20 +93,23 @@ async fn retweet(id: u64) {
     }
 }
 
-fn get_jeanne_phrase() -> &'static str {
-    use rand::distributions::{Distribution, Uniform};
-
-    let distribution = Uniform::from(0..constants::JEANNE_TALK.len());
-    let mut rng = rand::thread_rng();
-    constants::JEANNE_TALK[distribution.sample(&mut rng)]
+async fn greet() {
+    match egg_mode::tweet::DraftTweet::new(constants::JEANNE_GREETING).send(&TOKEN).await {
+        Ok(_) => (),
+        Err(error) => {
+            rogu::warn!("Unable to greet on twitter. Error: {}", error);
+        }
+    }
 }
 
 async fn talk() {
     let mut interval = async_timer::Interval::platform_new(core::time::Duration::from_secs(86400));
     loop {
         interval.as_mut().await;
-        match egg_mode::tweet::DraftTweet::new(get_jeanne_phrase()).send(&TOKEN).await {
-            Ok(_) => (),
+        match egg_mode::tweet::DraftTweet::new(constants::get_jeanne_phrase()).send(&TOKEN).await {
+            Ok(_) => {
+                STATS.increment(stats::TwitterPeriodicTweet);
+            },
             Err(error) => {
                 rogu::warn!("Unable to send phrase. Error: {}", error);
             }
@@ -118,6 +121,7 @@ async fn talk() {
 pub async fn worker() {
     use futures_util::stream::StreamExt;
 
+    tokio::spawn(greet());
     tokio::spawn(talk());
 
     loop {
@@ -156,6 +160,8 @@ pub async fn worker() {
                         tokio::spawn(retweet(tweet.id));
                         continue;
                     }
+
+                    STATS.increment(stats::TwitterUnfilteredTweet);
                 },
                 egg_mode::stream::StreamMessage::Disconnect(code, error) => {
                     rogu::warn!("Twitter disconnected. Code={}, Error={}", code, error);

@@ -20,6 +20,20 @@ pub const JEANNE_TALK: [&str; 5] = [
     "まったく、カイはいつも無茶をしてる\nなぜ私を頼ってならない？\n特別扱い？べー別にそんなつもりはない...\n指揮官にとしてそれは普通だ\n笑えない、花琳！",
 ];
 
+pub mod emoji {
+    pub mod jeanne {
+        pub mod hmph {
+            pub const ID: u64 = 613991053065977876;
+            pub const NAME: &str = "JeanneHmph";
+        }
+
+        pub mod smile {
+            pub const ID: u64 = 613992618208133120;
+            pub const NAME: &str = "JeanneSmile";
+        }
+    }
+}
+
 pub fn get_jeanne_phrase() -> &'static str {
     use rand::distributions::{Distribution, Uniform};
 
@@ -27,3 +41,4 @@ pub fn get_jeanne_phrase() -> &'static str {
     let mut rng = rand::thread_rng();
     JEANNE_TALK[distribution.sample(&mut rng)]
 }
+

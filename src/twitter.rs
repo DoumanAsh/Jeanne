@@ -27,13 +27,12 @@ pub static BUFFERED_TWEETS: Q64<(u64, String, TweetType)> = Q64::new();
 
 fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
-                              .track(&["#びそくぜんしんっ", "#なぜ僕", "#なぜ僕の世界を誰も覚えていないのか"])
+                              .track(&["#なぜ僕", "#なぜ僕の世界を誰も覚えていないのか"])
                               .start(&TOKEN)
 }
 
 pub enum TweetType {
     NazeBoku,
-    Bisokuzenshin,
 }
 
 fn send_tweet(http: &serenity::http::client::Http, id: u64, name: &str, ch_id: u64) {
@@ -60,11 +59,6 @@ pub fn redirect_tweet(http: &serenity::http::client::Http, id: u64, name: String
     match typ {
         TweetType::NazeBoku => {
             config::DISCORD.with_read(move |config| for ch in config.channels.naze.iter() {
-                send_tweet(&*http, id, &name, *ch);
-            })
-        },
-        TweetType::Bisokuzenshin => {
-            config::DISCORD.with_read(move |config| for ch in config.channels.bisokuzenshin.iter() {
                 send_tweet(&*http, id, &name, *ch);
             })
         },
@@ -133,18 +127,18 @@ pub async fn worker() {
         'msg: while let Some(Ok(msg)) = stream.next().await {
             match msg {
                 egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
+                    rogu::debug!("Incoming tweet {:?}", tweet);
+
                     let name = match tweet.user {
                         Some(user) => user.screen_name,
                         None => continue,
                     };
 
-                    rogu::debug!("Incoming tweet from user={}, id={}", name, tweet.id);
-
+                    let mut hashtags_text = String::new();
                     for hash_tag in tweet.entities.hashtags {
-                        if hash_tag.text == "びそくぜんしんっ" {
-                            place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
-                            continue 'msg;
-                        } else if hash_tag.text.starts_with("なぜ僕") {
+                        hashtags_text.push_str(&hash_tag.text);
+                        hashtags_text.push_str(",");
+                        if hash_tag.text.starts_with("なぜ僕") {
                             place_tweet(tweet.id, name, TweetType::NazeBoku);
                             tokio::spawn(retweet(tweet.id));
                             continue 'msg;
@@ -152,15 +146,13 @@ pub async fn worker() {
                     }
 
                     //tweet.entities.hashtags doesn't contain hashtags for long tweets
-                    if tweet.text.contains("びそくぜんしんっ") {
-                        place_tweet(tweet.id, name, TweetType::Bisokuzenshin);
-                        continue;
-                    } else if tweet.text.contains("なぜ僕") {
+                    if tweet.text.contains("なぜ僕") {
                         place_tweet(tweet.id, name, TweetType::NazeBoku);
                         tokio::spawn(retweet(tweet.id));
                         continue;
                     }
 
+                    rogu::info!("Display {{ hash_tags=[{}], text='{}' }}", tweet.text, hashtags_text);
                     STATS.increment(stats::TwitterUnfilteredTweet);
                 },
                 egg_mode::stream::StreamMessage::Disconnect(code, error) => {

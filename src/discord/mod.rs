@@ -3,13 +3,24 @@ use crate::stats::{self, STATS};
 use crate::twitter;
 
 use std::sync::Arc;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 mod commands;
 
 use commands::*;
 
+static SELF_ID: AtomicU64 = AtomicU64::new(0);
+
 lazy_static::lazy_static! {
     pub static ref HTTP: parking_lot::RwLock<Option<Arc<serenity::CacheAndHttp>>> = parking_lot::RwLock::new(None);
+}
+
+#[inline(always)]
+fn get_reaction_server_emoji(id: u64, name: &str) -> serenity::model::channel::ReactionType {
+    serenity::model::misc::EmojiIdentifier {
+        id: id.into(),
+        name: name.into(),
+    }.into()
 }
 
 fn stat_serenity_error(error: &serenity::Error) {
@@ -86,6 +97,32 @@ impl serenity::client::EventHandler for Handler {
 
         STATS.increment(stats::DiscordLossMember);
     }
+
+    fn message(&self, ctx: serenity::prelude::Context, msg: serenity::model::prelude::Message) {
+        let self_id = SELF_ID.load(Ordering::Acquire);
+
+        if self_id == 0 {
+            return;
+        }
+
+        if msg.mention_everyone {
+            if let Err(error) = msg.react(&*ctx.http, get_reaction_server_emoji(constants::emoji::jeanne::hmph::ID, constants::emoji::jeanne::hmph::NAME)) {
+                rogu::error!("Cannot react with hmph. Error={}", error);
+                stat_serenity_error(&error);
+            }
+            return;
+        }
+
+        for mention in msg.mentions.iter() {
+            if mention.id.0 == self_id {
+                if let Err(error) = msg.react(&*ctx.http, get_reaction_server_emoji(constants::emoji::jeanne::smile::ID, constants::emoji::jeanne::smile::NAME)) {
+                    rogu::error!("Cannot react with smile. Error={}", error);
+                    stat_serenity_error(&error);
+                }
+                break;
+            }
+        }
+    }
 }
 
 fn configure(config: &mut serenity::framework::standard::Configuration) -> &mut serenity::framework::standard::Configuration {
@@ -105,6 +142,15 @@ pub fn run() {
                                                      .group(&GENERAL_GROUP)
                                                      .group(&ADMIN_GROUP)
     );
+
+    match client.cache_and_http.http.get_current_user() {
+        Ok(info) => {
+            SELF_ID.store(info.id.0, Ordering::Release);
+        },
+        Err(error) => {
+            rogu::error!("Discord unable to get current user info: {}", error);
+        }
+    }
 
     if config::DISCORD.with_read(|config| config.owner) == 0 {
         match client.cache_and_http.http.get_current_application_info() {

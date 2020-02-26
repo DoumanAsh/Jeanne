@@ -124,7 +124,7 @@ fn subscribe(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult 
 }
 
 #[group("admin")]
-#[commands(stats, welcome)]
+#[commands(stats, debug, welcome)]
 #[checks(is_admin)]
 #[description = "List of commands available for administrators"]
 pub struct Admin;
@@ -140,6 +140,15 @@ fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
     });
 
     STATS.reset();
+
+    handle_msg_send!(res)
+}
+
+#[command]
+#[description = "Debug bot"]
+fn debug(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let _ = msg.reply(&*ctx.http, format!("Raw msg: `{:?}`", msg.content.clone()));
+    let res = msg.reply(&*ctx.http, format!("Clean msg: `{:?}`", msg.content_safe(&ctx.cache)));
 
     handle_msg_send!(res)
 }

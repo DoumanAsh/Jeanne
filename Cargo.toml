@@ -1,6 +1,6 @@
 [package]
 name = "jeanne"
-version = "1.1.6"
+version = "1.1.7"
 authors = ["Douman <douman@gmx.se>"]
 publish = false
 description = "My discord bot named after best girl in Naze Boku no Sekai wo Dare mo Oboeteinainoka"
@@ -32,7 +32,8 @@ version = "0.8"
 
 [dependencies.rogu]
 version = "0.2"
-features = ["std", "release_level_trace_off", "release_level_debug_off"]
+#features = ["std", "release_level_trace_off", "release_level_debug_off"]
+features = ["std", "release_level_trace_off"]
 
 [dependencies.log]
 version = "0"

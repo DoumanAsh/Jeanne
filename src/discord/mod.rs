@@ -99,11 +99,10 @@ impl serenity::client::EventHandler for Handler {
     }
 
     fn message(&self, ctx: serenity::prelude::Context, msg: serenity::model::prelude::Message) {
-        let self_id = SELF_ID.load(Ordering::Acquire);
-
-        if self_id == 0 {
+        if msg.author.bot {
             return;
         }
+
 
         if msg.mention_everyone {
             if let Err(error) = msg.react(&*ctx.http, get_reaction_server_emoji(constants::emoji::jeanne::hmph::ID, constants::emoji::jeanne::hmph::NAME)) {
@@ -113,13 +112,18 @@ impl serenity::client::EventHandler for Handler {
             return;
         }
 
-        for mention in msg.mentions.iter() {
-            if mention.id.0 == self_id {
+        let self_id = SELF_ID.load(Ordering::Acquire);
+
+        if self_id == 0 {
+            return;
+        }
+
+        if msg.mentions.len() == 1 {
+            if msg.mentions[0].id.0 == self_id {
                 if let Err(error) = msg.react(&*ctx.http, get_reaction_server_emoji(constants::emoji::jeanne::smile::ID, constants::emoji::jeanne::smile::NAME)) {
                     rogu::error!("Cannot react with smile. Error={}", error);
                     stat_serenity_error(&error);
                 }
-                break;
             }
         }
     }

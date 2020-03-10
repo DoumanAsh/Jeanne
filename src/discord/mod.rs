@@ -103,18 +103,17 @@ impl serenity::client::EventHandler for Handler {
             return;
         }
 
+        let self_id = SELF_ID.load(Ordering::Acquire);
+
+        if self_id == 0 || msg.author.id.0 == self_id {
+            return;
+        }
 
         if msg.mention_everyone {
             if let Err(error) = msg.react(&*ctx.http, get_reaction_server_emoji(constants::emoji::jeanne::hmph::ID, constants::emoji::jeanne::hmph::NAME)) {
                 rogu::error!("Cannot react with hmph. Error={}", error);
                 stat_serenity_error(&error);
             }
-            return;
-        }
-
-        let self_id = SELF_ID.load(Ordering::Acquire);
-
-        if self_id == 0 {
             return;
         }
 

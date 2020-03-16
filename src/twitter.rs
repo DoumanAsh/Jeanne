@@ -126,7 +126,7 @@ pub async fn worker() {
 
         'msg: while let Some(Ok(msg)) = stream.next().await {
             match msg {
-                egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() {
+                egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() && tweet.quoted_status.is_none() {
                     rogu::debug!("Incoming tweet {:?}", tweet);
 
                     let name = match tweet.user {
@@ -134,10 +134,7 @@ pub async fn worker() {
                         None => continue,
                     };
 
-                    let mut hashtags_text = String::new();
                     for hash_tag in tweet.entities.hashtags {
-                        hashtags_text.push_str(&hash_tag.text);
-                        hashtags_text.push_str(",");
                         if hash_tag.text.starts_with("なぜ僕") {
                             place_tweet(tweet.id, name, TweetType::NazeBoku);
                             tokio::spawn(retweet(tweet.id));
@@ -152,7 +149,6 @@ pub async fn worker() {
                         continue;
                     }
 
-                    rogu::info!("Display {{ hash_tags=[{}], text='{}' }}", tweet.text, hashtags_text);
                     STATS.increment(stats::TwitterUnfilteredTweet);
                 },
                 egg_mode::stream::StreamMessage::Disconnect(code, error) => {

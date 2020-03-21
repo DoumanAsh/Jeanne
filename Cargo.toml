@@ -1,6 +1,6 @@
 [package]
 name = "jeanne"
-version = "1.1.9"
+version = "1.1.10"
 authors = ["Douman <douman@gmx.se>"]
 publish = false
 description = "My discord bot named after best girl in Naze Boku no Sekai wo Dare mo Oboeteinainoka"

@@ -8,6 +8,13 @@ pub const TWITTER_CONSUMER_KEY: &str = env!("JEANNE_TWITTER_CONSUMER_KEY");
 pub const TWITTER_CONSUMER_SECRET: &str = env!("JEANNE_TWITTER_CONSUMER_SECRET");
 pub const TWITTER_ACCESS_KEY: &str = env!("JEANNE_ACCESS_CONSUMER_KEY");
 pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
+//Maintain sorted order
+pub const TRUST_USER_IDS: [u64; 4] = [
+    70647036, //@dokidoki_manga
+    1215268226, // @ArikanRobo
+    2325188503, // @sazanek
+    1059396573715546112, // @sazaneKproject
+];
 
 const TOKEN: egg_mode::Token = egg_mode::Token::Access {
     consumer: egg_mode::KeyPair {
@@ -27,7 +34,7 @@ pub static BUFFERED_TWEETS: Q64<(u64, String, TweetType)> = Q64::new();
 
 fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
-                              .track(&["#なぜ僕", "#なぜ僕の世界を誰も覚えていないのか"])
+                              .track(&["#なぜ僕", "『なぜ僕』", "なぜ僕の世界を誰も覚えていないのか", "Why Nobody Remembers my World"])
                               .start(&TOKEN)
 }
 
@@ -126,30 +133,39 @@ pub async fn worker() {
 
         'msg: while let Some(Ok(msg)) = stream.next().await {
             match msg {
-                egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() && tweet.quoted_status.is_none() {
+                egg_mode::stream::StreamMessage::Tweet(tweet) => if tweet.retweeted_status.is_none() && tweet.in_reply_to_status_id.is_none() {
                     rogu::debug!("Incoming tweet {:?}", tweet);
 
-                    let name = match tweet.user {
-                        Some(user) => user.screen_name,
+                    let (user_id, user_name) = match tweet.user {
+                        Some(user) => (user.id, user.screen_name),
                         None => continue,
                     };
 
                     for hash_tag in tweet.entities.hashtags {
                         if hash_tag.text.starts_with("なぜ僕") {
-                            place_tweet(tweet.id, name, TweetType::NazeBoku);
+                            place_tweet(tweet.id, user_name, TweetType::NazeBoku);
                             tokio::spawn(retweet(tweet.id));
                             continue 'msg;
                         }
                     }
 
                     //tweet.entities.hashtags doesn't contain hashtags for long tweets
-                    if tweet.text.contains("なぜ僕") {
-                        place_tweet(tweet.id, name, TweetType::NazeBoku);
+                    if tweet.text.contains("#なぜ僕") {
+                        place_tweet(tweet.id, user_name, TweetType::NazeBoku);
                         tokio::spawn(retweet(tweet.id));
                         continue;
-                    }
+                    } else if tweet.text.contains("なぜ僕") || tweet.text.contains("Why Nobody Remembers") {
+                        if TRUST_USER_IDS.binary_search(&user_id).is_ok() {
+                            place_tweet(tweet.id, user_name, TweetType::NazeBoku);
+                            tokio::spawn(retweet(tweet.id));
+                        } else {
+                            STATS.increment(stats::TwitterUntrustedTweet);
+                        }
 
-                    STATS.increment(stats::TwitterUnfilteredTweet);
+                        continue;
+                    } else {
+                        STATS.increment(stats::TwitterUnfilteredTweet);
+                    }
                 },
                 egg_mode::stream::StreamMessage::Disconnect(code, error) => {
                     rogu::warn!("Twitter disconnected. Code={}, Error={}", code, error);

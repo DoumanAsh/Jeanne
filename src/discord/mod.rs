@@ -3,7 +3,7 @@ use crate::stats::{self, STATS};
 use crate::twitter;
 
 use std::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 mod commands;
 
@@ -41,20 +41,33 @@ fn stat_serenity_error(error: &serenity::Error) {
     }
 }
 
-struct Handler;
+struct Handler {
+    welcome_done: AtomicBool,
+}
+
+impl Handler {
+    const fn new() -> Self {
+        Self {
+            welcome_done: AtomicBool::new(false),
+        }
+    }
+}
 
 impl serenity::client::EventHandler for Handler {
     fn ready(&self, ctx: serenity::prelude::Context, _bot_data: serenity::model::gateway::Ready) {
         STATS.increment(stats::DiscordConnected);
-        let welcome_channel = config::DISCORD.with_read(|config| config.channels.welcome);
 
-        if welcome_channel > 0 {
-            let welcome_channel = serenity::model::id::ChannelId(welcome_channel);
-            match welcome_channel.say(&ctx.http, constants::JEANNE_GREETING) {
-                Ok(_) => (),
-                Err(error) => {
-                    rogu::error!("Unable to greet on discord. Error: {}", error);
-                    stat_serenity_error(&error);
+        if !self.welcome_done.compare_and_swap(false, true, Ordering::AcqRel) {
+            let welcome_channel = config::DISCORD.with_read(|config| config.channels.welcome);
+
+            if welcome_channel > 0 {
+                let welcome_channel = serenity::model::id::ChannelId(welcome_channel);
+                match welcome_channel.say(&ctx.http, constants::JEANNE_GREETING) {
+                    Ok(_) => (),
+                    Err(error) => {
+                        rogu::error!("Unable to greet on discord. Error: {}", error);
+                        stat_serenity_error(&error);
+                    }
                 }
             }
         }
@@ -136,7 +149,7 @@ fn configure(config: &mut serenity::framework::standard::Configuration) -> &mut 
 }
 
 pub fn run() {
-    let mut client = serenity::client::Client::new(config::DISCORD_TOKEN, Handler).expect("To create client");
+    let mut client = serenity::client::Client::new(config::DISCORD_TOKEN, Handler::new()).expect("To create client");
 
     client.with_framework(
         serenity::framework::StandardFramework::new().configure(configure)

@@ -9,8 +9,7 @@ pub const TWITTER_CONSUMER_SECRET: &str = env!("JEANNE_TWITTER_CONSUMER_SECRET")
 pub const TWITTER_ACCESS_KEY: &str = env!("JEANNE_ACCESS_CONSUMER_KEY");
 pub const TWITTER_ACCESS_SECRET: &str = env!("JEANNE_ACCESS_CONSUMER_SECRET");
 //Maintain sorted order
-pub const TRUST_USER_IDS: [u64; 4] = [
-    70647036, //@dokidoki_manga
+pub const TRUST_USER_IDS: [u64; 3] = [
     1215268226, // @ArikanRobo
     2325188503, // @sazanek
     1059396573715546112, // @sazaneKproject
@@ -34,7 +33,7 @@ pub static BUFFERED_TWEETS: Q64<(u64, String, TweetType)> = Q64::new();
 
 fn create_twitter_stream() -> egg_mode::stream::TwitterStream {
     egg_mode::stream::filter().filter_level(egg_mode::stream::FilterLevel::None)
-                              .track(&["#なぜ僕", "『なぜ僕』", "なぜ僕の世界を誰も覚えていないのか", "Why Nobody Remembers my World"])
+                              .track(&["なぜ僕"])
                               .start(&TOKEN)
 }
 
@@ -154,7 +153,7 @@ pub async fn worker() {
                         place_tweet(tweet.id, user_name, TweetType::NazeBoku);
                         tokio::spawn(retweet(tweet.id));
                         continue;
-                    } else if tweet.text.contains("なぜ僕") || tweet.text.contains("Why Nobody Remembers") {
+                    } else if tweet.text.contains("なぜ僕") {
                         if TRUST_USER_IDS.binary_search(&user_id).is_ok() {
                             place_tweet(tweet.id, user_name, TweetType::NazeBoku);
                             tokio::spawn(retweet(tweet.id));

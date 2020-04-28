@@ -17,7 +17,7 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "1"
-cute-dnd-dice = "2"
+cute-dnd-dice = "3"
 parking_lot = "0.10"
 bincode = "1"
 async-timer = "0.7"

@@ -6,9 +6,9 @@ use serenity::prelude::{Context};
 use serenity::framework::standard::{Args, CommandResult, CommandOptions, CheckResult, Check, HelpOptions, CommandGroup, help_commands, DispatchError, Reason};
 use serenity::framework::standard::macros::{command, group, help};
 
-use crate::config;
+use crate::{utils, config};
 use crate::stats::{self, STATS};
-use crate::constants::{ADMIN_CHECK_FAIL, MSG_SET_WELCOME, MSG_REMOVE_WELCOME, MSG_REMOVE_SUB, MSG_ADD_SUB, MSG_UNKNOWN_SUB};
+use crate::constants::{Waifu, ADMIN_CHECK_FAIL, MSG_SET_WELCOME, MSG_REMOVE_WELCOME, MSG_REMOVE_SUB, MSG_ADD_SUB, MSG_UNKNOWN_SUB};
 
 macro_rules! handle_msg_send {
     ($res:expr) => {
@@ -55,7 +55,7 @@ fn is_admin(ctx: &mut Context, message: &Message, _args: &mut Args, _options: &C
 }
 
 #[group("general")]
-#[commands(ping, dice, subscribe)]
+#[commands(ping, dice, subscribe, set_waifu)]
 #[description = "List of commands available for everyone"]
 pub struct General;
 
@@ -142,6 +142,72 @@ fn stats(ctx: &mut Context, msg: &Message) -> CommandResult {
     STATS.reset();
 
     handle_msg_send!(res)
+}
+
+#[command]
+#[description = "Select your waifu"]
+#[max_args(1)]
+fn set_waifu(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+    let waifu = match args.current() {
+        Some(waifu) => match Waifu::from_str(waifu) {
+            Some(waifu) => waifu,
+            None => {
+                let res = msg.reply(&*ctx.http, "I don't know such girl.");
+                return handle_msg_send!(res)
+            }
+        },
+        None => {
+            let res = msg.reply(&*ctx.http, "Who is your waifu among Rinne, Jeanne, Reiren and Hinemarill?");
+            return handle_msg_send!(res)
+        }
+    };
+
+    let mut member = match msg.member(&ctx.cache) {
+        Some(member) => member,
+        None => {
+            let res = msg.reply(&*ctx.http, "This command is available in guild only");
+            return handle_msg_send!(res)
+        }
+    };
+
+    let guild = match msg.guild(&ctx.cache) {
+        Some(guild) => guild,
+        None => {
+            let res = msg.reply(&*ctx.http, "This command is available in guild only");
+            return handle_msg_send!(res)
+        }
+    };
+
+    let mut to_remove_roles = utils::four::Vec::<serenity::model::id::RoleId>::new();
+    let mut waifu_role = serenity::model::id::RoleId(0);
+    let waifu_str = waifu.as_str();
+
+    for (id, role) in guild.read().roles.iter() {
+        if !role.name.starts_with("Team") {
+            continue;
+        }
+
+        if role.name.ends_with(waifu_str) {
+            waifu_role = *id;
+        } else {
+            to_remove_roles.push(*id);
+        }
+    }
+
+    if member.roles.contains(&waifu_role) {
+        return handle_msg_send!(msg.reply(&*ctx.http, "Yes, I know that she is your waifu, you don't need to repeat"));
+    }
+
+    let _ = member.remove_roles(&*ctx.http, to_remove_roles.as_slice());
+    let res = match member.add_role(&*ctx.http, waifu_role) {
+        Ok(_) => msg.reply(&*ctx.http, format!("Set your waifu as {}", waifu_str)),
+        Err(err) => {
+            rogu::error!("Failed to set role. Error: {:?}", err);
+            msg.reply(&*ctx.http, "Cannot set waifu :(")
+        }
+    };
+
+    return handle_msg_send!(res)
 }
 
 #[command]

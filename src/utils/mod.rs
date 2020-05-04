@@ -19,3 +19,7 @@ macro_rules! unreach {
         unreachable!()
     })
 }
+
+pub mod four {
+    statiki::declare_vec!(4);
+}

@@ -1,4 +1,5 @@
 use core::time::Duration;
+use core::fmt;
 
 pub const ADMIN_CHECK_FAIL: &str = "You're unathorized to access the command.";
 
@@ -19,6 +20,48 @@ pub const JEANNE_TALK: [&str; 5] = [
     "マッサージはすき?\nまぁずっと鎧を着ているから夜で肩はいつも痛み\nだからマッサージは歓迎",
     "まったく、カイはいつも無茶をしてる\nなぜ私を頼ってならない？\n特別扱い？べー別にそんなつもりはない...\n指揮官にとしてそれは普通だ\n笑えない、花琳！",
 ];
+
+#[derive(Clone, Copy)]
+pub enum Waifu {
+    Rinne,
+    Jeanne,
+    Reiren,
+    Hinemarill,
+}
+
+impl Waifu {
+    ///Parses string, returning waifu variant, if matches any
+    pub fn from_str(mut text: &str) -> Option<Self> {
+        text = text.trim();
+
+        if text.eq_ignore_ascii_case("Rinne") {
+            Some(Waifu::Rinne)
+        } else if text.eq_ignore_ascii_case("Jeanne") {
+            Some(Waifu::Jeanne)
+        } else if text.eq_ignore_ascii_case("Reiren") {
+            Some(Waifu::Reiren)
+        } else if text.eq_ignore_ascii_case("Hinemarill") {
+            Some(Waifu::Hinemarill)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Waifu::Rinne => "Rinne",
+            Waifu::Jeanne => "Jeanne",
+            Waifu::Reiren => "Reiren",
+            Waifu::Hinemarill => "Hinemarill",
+        }
+    }
+}
+
+impl fmt::Display for Waifu {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
 
 pub mod emoji {
     pub mod jeanne {
@@ -41,4 +84,3 @@ pub fn get_jeanne_phrase() -> &'static str {
     let mut rng = rand::thread_rng();
     JEANNE_TALK[distribution.sample(&mut rng)]
 }
-

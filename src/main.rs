@@ -4,6 +4,7 @@ use std::thread;
 
 #[macro_use]
 mod utils;
+mod rt;
 mod constants;
 mod stats;
 mod config;
@@ -11,6 +12,7 @@ mod discord;
 mod twitter;
 
 fn main() {
+    rt::init();
     config::init();
 
     thread::Builder::new().name("twitter-worker".to_owned())

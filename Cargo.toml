@@ -21,8 +21,8 @@ cute-dnd-dice = "3"
 parking_lot = "0.10"
 bincode = "1"
 async-timer = "0.7"
-rand = "0.7"
 statiki = "0"
+get-random-const = "1"
 
 [dependencies.serde]
 version = "1"

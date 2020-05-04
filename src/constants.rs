@@ -1,5 +1,5 @@
 use core::time::Duration;
-use core::fmt;
+use core::{num, fmt};
 
 pub const ADMIN_CHECK_FAIL: &str = "You're unathorized to access the command.";
 
@@ -78,9 +78,6 @@ pub mod emoji {
 }
 
 pub fn get_jeanne_phrase() -> &'static str {
-    use rand::distributions::{Distribution, Uniform};
-
-    let distribution = Uniform::from(0..JEANNE_TALK.len());
-    let mut rng = rand::thread_rng();
-    JEANNE_TALK[distribution.sample(&mut rng)]
+    static DICE: cute_dnd_dice::Roll = cute_dnd_dice::Roll::new(1, unsafe { num::NonZeroU16::new_unchecked(JEANNE_TALK.len() as u16) }, cute_dnd_dice::Modifier::Plus(0));
+    JEANNE_TALK[DICE.roll() as usize - 1]
 }

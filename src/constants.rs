@@ -66,12 +66,12 @@ impl fmt::Display for Waifu {
 pub mod emoji {
     pub mod jeanne {
         pub mod hmph {
-            pub const ID: u64 = 613991053065977876;
+            pub const ID: u64 = 715486277818122302;
             pub const NAME: &str = "JeanneHmph";
         }
 
         pub mod smile {
-            pub const ID: u64 = 613992618208133120;
+            pub const ID: u64 = 715486276207378503;
             pub const NAME: &str = "JeanneSmile";
         }
     }

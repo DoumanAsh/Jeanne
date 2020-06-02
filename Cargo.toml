@@ -20,9 +20,12 @@ lazy_static = "1"
 cute-dnd-dice = "3"
 parking_lot = "0.10"
 bincode = "1"
-async-timer = "0.7"
 statiki = "0"
 get-random-const = "1"
+
+[dependencies.async-timer]
+version = "1.0.0-beta"
+features = ["c_wrapper"]
 
 [dependencies.serde]
 version = "1"

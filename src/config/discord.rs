@@ -1,12 +1,8 @@
 use serde::{Serialize, Deserialize};
-use async_timer::oneshot::{Oneshot, Timer};
+use async_timer::timer::{SyncTimer, Timer, SyncPlatform, new_sync_timer};
 
 use std::io;
 use std::collections::HashSet;
-use core::ptr;
-use core::pin::Pin;
-use core::future::Future;
-use core::task::{self, Poll};
 
 use super::FileSystemLoad;
 use crate::constants::CONFIG_UPDATE_INTERVAL;
@@ -31,13 +27,20 @@ impl FileSystemLoad for DiscordConfig {
 }
 
 pub struct Discord {
-    inner: parking_lot::RwLock<(DiscordConfig, Timer)>,
+    inner: parking_lot::RwLock<(DiscordConfig, SyncPlatform)>,
 }
 
 impl Discord {
     pub fn new() -> io::Result<Self> {
-        DiscordConfig::load().map(|config| Self {
-            inner: parking_lot::RwLock::new((config, Timer::new(CONFIG_UPDATE_INTERVAL))),
+        DiscordConfig::load().map(|config| {
+            let mut timer = new_sync_timer(CONFIG_UPDATE_INTERVAL);
+
+            timer.init(|state| state.register(on_config_update as fn()));
+            timer.cancel();
+
+            Self {
+                inner: parking_lot::RwLock::new((config, timer)),
+            }
         })
     }
 
@@ -58,44 +61,27 @@ impl Discord {
 
         let res = cb(&mut inner.0);
 
-        let waker = task::RawWaker::new(ptr::null(), &VTABLE);
-        let waker = unsafe { task::Waker::from_raw(waker) };
-        let mut context = task::Context::from_waker(&waker);
-
-        match Future::poll(Pin::new(&mut inner.1), &mut context) {
-            Poll::Pending => match inner.1.is_ticking() {
+        match inner.1.tick() {
+            false => match inner.1.is_ticking() {
                 true => return res,
                 false => (),
             },
-            Poll::Ready(_) => ()
+            true => (),
         }
 
-        inner.1.restart(CONFIG_UPDATE_INTERVAL, &waker);
+        inner.1.restart(CONFIG_UPDATE_INTERVAL);
         res
     }
 }
 
-static VTABLE: task::RawWakerVTable = task::RawWakerVTable::new(vtab::on_clone, vtab::on_wake, vtab::on_wake, vtab::on_drop);
-
-mod vtab {
-    use super::*;
-
-    pub unsafe fn on_clone(_data: *const ()) -> task::RawWaker {
-        task::RawWaker::new(ptr::null(), &VTABLE)
-    }
-
-    pub unsafe fn on_drop(_data: *const ()) {
-    }
-
-    pub unsafe fn on_wake(_data: *const ()) {
-        match crate::config::DISCORD.save() {
-            Ok(_) => {
-                rogu::info!("Discord config is updated.");
-            },
-            Err(error) => {
-                rogu::error!("Discord unable to save config: {}", error);
-                crate::stats::STATS.increment(crate::stats::DiscordBrokenConfigUpdate);
-            }
+fn on_config_update() {
+    match crate::config::DISCORD.save() {
+        Ok(_) => {
+            rogu::info!("Discord config is updated.");
+        },
+        Err(error) => {
+            rogu::error!("Discord unable to save config: {}", error);
+            crate::stats::STATS.increment(crate::stats::DiscordBrokenConfigUpdate);
         }
     }
 }

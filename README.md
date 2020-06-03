@@ -1,7 +1,6 @@
 # Jeanne
 
-[![Build status](https://ci.appveyor.com/api/projects/status/60jejij3sleo315d/branch/master?svg=true)](https://ci.appveyor.com/project/DoumanAsh/jeanne/branch/master)
-[![Build Status](https://travis-ci.org/DoumanAsh/Jeanne.svg?branch=master)](https://travis-ci.org/DoumanAsh/Jeanne)
+![Build](https://github.com/DoumanAsh/Jeanne/workflows/Rust/badge.svg?branch=master)
 
 ![Jeanne image](./Jeanne.jpg)
 

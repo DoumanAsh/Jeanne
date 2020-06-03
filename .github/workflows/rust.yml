@@ -40,4 +40,10 @@ jobs:
         rustc --version
 
     - name: Check
+      env:
+        JEANNE_ACCESS_CONSUMER_KEY: ${{ secrets.JEANNE_ACCESS_CONSUMER_KEY }}
+        JEANNE_ACCESS_CONSUMER_SECRET: ${{ secrets.JEANNE_ACCESS_CONSUMER_SECRET }}
+        JEANNE_TWITTER_CONSUMER_KEY: ${{ secrets.JEANNE_TWITTER_CONSUMER_KEY }}
+        JEANNE_TWITTER_CONSUMER_SECRET: ${{ secrets.JEANNE_TWITTER_CONSUMER_SECRET }}
+        JEANNE_DISCORD_TOKEN: ${{ secrets.JEANNE_DISCORD_TOKEN }}
       run: cargo check
